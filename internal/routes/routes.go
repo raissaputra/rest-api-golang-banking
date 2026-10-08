@@ -1,9 +1,9 @@
 package routes
 
 import (
+	"banking-management-api/internal/handlers"
 
 	"github.com/gofiber/fiber/v3"
-	"banking-management-api/internal/handlers"
 )
 
 func SetupRoutes(app *fiber.App) {
@@ -12,7 +12,7 @@ func SetupRoutes(app *fiber.App) {
 
 	api.Get("/health", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"message": "Banking API is running",
+			"message": "Banking API siap di develop oleh rs",
 		})
 	})
 
@@ -21,15 +21,15 @@ func SetupRoutes(app *fiber.App) {
 			"message": "This is a banking API",
 			"version": "1.0.0",
 		})
-	})	
-	
+	})
+
 	api.Get("/contact", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"status": "success",
+			"status": "successBanget",
 		})
 	})
 
-	api.Get("/customers", handlers.GetCustomers)	
+	api.Get("/customers", handlers.GetCustomers)
 	api.Get("/customers/:id", handlers.GetCustomerByID)
 	api.Post("/customers", handlers.CreateCustomer)
 	api.Put("/customers/:id", handlers.UpdateCustomer)

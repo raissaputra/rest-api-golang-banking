@@ -1,24 +1,27 @@
 package handlers
 
 import (
-	"strconv"
+	"banking-management-api/internal/dto"
 	"banking-management-api/internal/models"
+	"banking-management-api/internal/validators"
+	"strconv"
+
 	"github.com/gofiber/fiber/v3"
 )
 
 var customers = []models.Customer{
 	{
-		ID: 1, 
-		Name: "John Doe", 
-		Email: "john.doe@example.com",
-		Phone: "123-456-7890",
+		ID:      1,
+		Name:    "John Doe",
+		Email:   "john.doe@example.com",
+		Phone:   "123-456-7890",
 		Address: "123 Main St, City, State 12345",
 	},
 	{
-		ID: 2,
-		Name: "Jane Smith",
-		Email: "jane.smith@example.com",
-		Phone: "098-765-4321",
+		ID:      2,
+		Name:    "Jane Smith",
+		Email:   "jane.smith@example.com",
+		Phone:   "098-765-4321",
 		Address: "456 Oak Ave, Town, State 67890",
 	},
 }
@@ -31,7 +34,7 @@ func GetCustomers(c fiber.Ctx) error {
 // GET - Mendapatkan customer berdasarkan ID
 func GetCustomerByID(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
- 
+
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"error": "Invalid customer ID",
@@ -51,23 +54,35 @@ func GetCustomerByID(c fiber.Ctx) error {
 
 // POST - Mmembuat customer baru
 func CreateCustomer(c fiber.Ctx) error {
-	var newCustomer models.Customer
+	var newCustomer dto.CreateCustomerRequest
 
 	if err := c.Bind().Body(&newCustomer); err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"error": "Invalid request body",
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid request body",
+			"errors":  err.Error(),
 		})
 	}
 
-	maxID := 0
-	for _, customer := range customers {
-		if customer.ID > maxID {
-			maxID = customer.ID
-		}
+	if err := validators.Validate.Struct(newCustomer); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation failed",
+			"errors":  err.Error(),
+		})
 	}
-	newCustomer.ID = maxID + 1
-	customers = append(customers, newCustomer)
-	return c.Status(201).JSON(newCustomer)
+
+	customer := models.Customer{
+		ID:      len(customers) + 1, // Generate ID based on the length of the customers slice
+		Name:    newCustomer.Name,
+		Email:   newCustomer.Email,
+		Phone:   newCustomer.Phone,
+		Address: newCustomer.Address,
+	}
+
+	customers = append(customers, customer)
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message":  "Customer created successfully",
+		"data": customer,
+	})
 }
 
 // PUT - Memperbarui customer berdasarkan ID
