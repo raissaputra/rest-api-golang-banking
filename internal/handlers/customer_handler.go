@@ -4,6 +4,7 @@ import (
 	"banking-management-api/internal/dto"
 	"banking-management-api/internal/models"
 	"banking-management-api/internal/validators"
+	"banking-management-api/internal/response"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -28,7 +29,13 @@ var customers = []models.Customer{
 
 // GET - Mendapatkan semua customer
 func GetCustomers(c fiber.Ctx) error {
-	return c.JSON(customers)
+	//return c.JSON(customers)
+	return response.Success(
+		c, 
+		fiber.StatusOK, 
+		"Customers retrieved successfully", 
+		customers,
+	)
 }
 
 // GET - Mendapatkan customer berdasarkan ID
@@ -36,20 +43,29 @@ func GetCustomerByID(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"error": "Invalid customer ID",
-		})
+		return response.Error(
+			c, 
+			fiber.StatusBadRequest, 
+			"Invalid customer ID",
+		)
 	}
 
 	for _, customer := range customers {
 		if customer.ID == id {
-			return c.JSON(customer)
+			return response.Success(
+				c,
+				fiber.StatusOK,
+				"Customer retrieved successfully",
+				customer,
+			)
 		}
 	}
 
-	return c.Status(404).JSON(fiber.Map{
-		"error": "Customer not found",
-	})
+	return response.Error(
+		c,
+		fiber.StatusNotFound,
+		"Customer not found",
+	)
 }
 
 // POST - Mmembuat customer baru
@@ -57,17 +73,19 @@ func CreateCustomer(c fiber.Ctx) error {
 	var newCustomer dto.CreateCustomerRequest
 
 	if err := c.Bind().Body(&newCustomer); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid request body",
-			"errors":  err.Error(),
-		})
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Invalid request body",
+		)
 	}
 
 	if err := validators.Validate.Struct(newCustomer); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Validation failed",
-			"errors":  err.Error(),
-		})
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Validation failed",
+		)
 	}
 
 	customer := models.Customer{
@@ -79,10 +97,12 @@ func CreateCustomer(c fiber.Ctx) error {
 	}
 
 	customers = append(customers, customer)
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message":  "Customer created successfully",
-		"data": customer,
-	})
+	return response.Success(
+		c,
+		fiber.StatusCreated,
+		"Customer created successfully",
+		customer,
+	)
 }
 
 // PUT - Memperbarui customer berdasarkan ID
@@ -90,24 +110,33 @@ func UpdateCustomer(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"message": "Invalid customer ID",
-		})
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Invalid customer ID",
+		)
 	}
 
 	var input models.Customer
 
 	if err := c.Bind().Body(&input); err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"message": "Invalid request body",
-		})
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Invalid request body",
+		)
 	}
 
 	for i, customer := range customers {
 		if customer.ID == id {
 			input.ID = customer.ID
 			customers[i] = input
-			return c.JSON(input)
+			return response.Success(
+				c,
+				fiber.StatusOK,
+				"Customer updated successfully",
+				input,
+			)
 		}
 	}
 
@@ -121,21 +150,29 @@ func UpdateCustomer(c fiber.Ctx) error {
 func DeleteCustomer(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"message": "Invalid customer ID",
-		})
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Invalid customer ID",
+		)
 	}
 
 	for i, customer := range customers {
 		if customer.ID == id {
 			customers = append(customers[:i], customers[i+1:]...)
-			return c.JSON(fiber.Map{
-				"message": "Customer deleted successfully",
-			})
+			return response.Success(
+				c,
+				fiber.StatusOK,
+				"Customer deleted successfully",
+				nil,
+			)
 		}
 	}
 
-	return c.Status(404).JSON(fiber.Map{
-		"message": "Customer not found",
-	})
+	return response.Error(
+		c,
+		fiber.StatusNotFound,
+		"Customer not found",
+	)
+	
 }
